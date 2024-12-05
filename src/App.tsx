@@ -8,40 +8,37 @@ import React, {
 import './App.scss';
 import { peopleFromServer } from './data/people';
 import { Person } from './types/Person';
+import debounce from 'lodash.debounce';
 
 function filterPerson(arr: Person[], query: string) {
   return query ? [...arr].filter(elem => elem.name.includes(query)) : [...arr];
 }
 
 export const App: React.FC = () => {
-  const [value, setValue] = useState('');
-  const [appliedValue, setAppliedValue] = useState('');
+  const [query, setQuery] = useState('');
+  const [appliedQuery, setAppliedQuery] = useState('');
   const [title, setTitle] = useState('No selected person');
 
   const [showArray, setShowArray] = useState(false);
-  const timerId = useRef(0);
   const showMessageRef = useRef(false);
 
   const updatedPersons = useMemo(() => {
-    return filterPerson(peopleFromServer, appliedValue);
-  }, [appliedValue]);
+    return filterPerson(peopleFromServer, appliedQuery);
+  }, [appliedQuery]);
 
-  const handleChangeInputName = useCallback(
-    (event: React.ChangeEvent<HTMLInputElement>) => {
-      setValue(event.target.value);
-      setTitle('No selected person');
-      window.clearTimeout(timerId.current);
+  const applyQuery = useCallback(debounce(setAppliedQuery, 300), []);
 
-      timerId.current = window.setTimeout(() => {
-        setAppliedValue(!!event.target.value ? event.target.value : '');
-      }, 300);
-    },
-    [],
-  );
+  const handleChangeInputName = (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    setQuery(event.target.value);
+    setTitle('No selected person');
+    applyQuery(event.target.value.trim());
+  };
 
   const handleFocus = () => {
-    if (!value) {
-      setAppliedValue('');
+    if (!query) {
+      setAppliedQuery('');
     }
 
     setShowArray(true);
@@ -49,28 +46,28 @@ export const App: React.FC = () => {
   };
 
   const handleBlur = () => {
-    if (!value) {
+    if (!query) {
       setShowArray(false);
       showMessageRef.current = true;
     }
   };
 
   useEffect(() => {
-    if (appliedValue && updatedPersons.length > 0) {
+    if (appliedQuery && updatedPersons.length > 0) {
       const { name, born, died } = updatedPersons[0];
 
       setTitle(`${name} (${born} - ${died})`);
       setShowArray(true);
       showMessageRef.current = false;
-    } else if (appliedValue && updatedPersons.length === 0) {
+    } else if (appliedQuery && updatedPersons.length === 0) {
       setShowArray(false);
       showMessageRef.current = true;
-    } else if (!appliedValue && showArray) {
+    } else if (!appliedQuery && showArray) {
       setTitle('No selected person');
       setShowArray(true);
       showMessageRef.current = false;
     }
-  }, [appliedValue, updatedPersons, showArray]);
+  }, [appliedQuery, updatedPersons, showArray]);
 
   return (
     <div className="container">
@@ -86,7 +83,7 @@ export const App: React.FC = () => {
               placeholder="Enter a part of the name"
               className="input"
               data-cy="search-input"
-              value={value}
+              value={query}
               onChange={handleChangeInputName}
               onFocus={handleFocus}
               onBlur={handleBlur}
