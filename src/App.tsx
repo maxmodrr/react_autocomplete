@@ -26,6 +26,7 @@ export const App: React.FC = () => {
     return filterPerson(peopleFromServer, appliedQuery);
   }, [appliedQuery]);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const applyQuery = useCallback(debounce(setAppliedQuery, 300), []);
 
   const handleChangeInputName = (
